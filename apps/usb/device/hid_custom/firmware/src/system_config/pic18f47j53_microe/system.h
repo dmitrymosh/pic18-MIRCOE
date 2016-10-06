@@ -64,7 +64,23 @@ typedef union
     } byte;    
 } UINT16_VAL, UINT16_BITS;
 
-
+// Application-dependent structure used to contain address information
+typedef struct 
+{
+    
+    uint16_t MainGearCogsCount;     
+    uint16_t GearRatio;             
+    uint16_t SM_StepCount;           
+    uint16_t SM_uStepCount;               
+    int16_t IntervalCorrection;         // step
+    int32_t IntervalCorrection_1kk;     // step/1kk 
+    uint16_t PulseWidth;                // in step    
+    uint32_t TimerFrequency;            // in Hz
+    uint16_t Interval;                  // step
+    uint32_t Interval_1kk;              // step/1kk 
+    uint32_t StarDayLength;
+    uint32_t StarDayLength_1kk;
+} APP_CONFIG;
 /*********************************************************************
 * Function: void SYSTEM_Initialize( SYSTEM_STATE state )
 *
@@ -94,5 +110,7 @@ void SYSTEM_Initialize( SYSTEM_STATE state );
 ********************************************************************/
 //void SYSTEM_Tasks(void);
 #define SYSTEM_Tasks()
-
+void CCP9Init(void);
+void LoadCfg(APP_CONFIG * config);
+void SaveCfg(APP_CONFIG * config);
 #endif //SYSTEM_H

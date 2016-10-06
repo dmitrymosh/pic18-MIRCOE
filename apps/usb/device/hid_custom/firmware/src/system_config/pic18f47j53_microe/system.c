@@ -70,7 +70,7 @@ const FILEIO_DRIVE_CONFIG InternalFlashDrive =
     (FILEIO_DRIVER_WriteProtectStateGet) FILEIO_InternalFlash_WriteProtectStateGet         // Function to determine if the media is write-protected.
 };
 
-#define STAR_DAY_LENGHT     86164.090530833
+
 #define MAIN_GEAR_COG_COUNT 360
 #define REDUCTION_RATIO     20
 #define SM_STEP_CONT        200
@@ -78,24 +78,10 @@ const FILEIO_DRIVE_CONFIG InternalFlashDrive =
 #define SM_PULSE_WIDTH      1000 // STEP minimum, HIGH pulse width, microseconds 
 #define INTERVAL            5609
 #define INTERVAL_1KK        641310
+#define STAR_DAY_LENGHT     86164
+#define STAR_DAY_LENGHT_1KK 90530
+
 #define INTERVAL_1KK_MAX    1000000
-
-// Application-dependent structure used to contain address information
-typedef struct 
-{
-    double StarDayLength;
-    uint16_t MainGearCogsCount;     // 
-                                    // 
-    uint16_t GearRatio;             // 
-    uint16_t SM_StepCount;          // 
-    uint16_t SM_uStepCount;         // 
-    int16_t IntervalCorrection;     // 
-    int32_t IntervalCorrection_1kk;    //
-    uint16_t PulseWidth;
-    uint16_t Interval;
-    uint32_t Interval_1kk;
-
-} APP_CONFIG;
 
 typedef struct 
 {
@@ -106,15 +92,26 @@ typedef struct
 
 
 APP_CONFIG AppDefault = {
-    (double)STAR_DAY_LENGHT, MAIN_GEAR_COG_COUNT,REDUCTION_RATIO,SM_STEP_CONT,SM_MICRO_STEP_COUNT, 0, 0, SM_PULSE_WIDTH, INTERVAL, INTERVAL_1KK
+    MAIN_GEAR_COG_COUNT,
+    REDUCTION_RATIO,
+    SM_STEP_CONT,
+    SM_MICRO_STEP_COUNT, 
+    0, 
+    0, 
+    SM_PULSE_WIDTH, 
+    GetSystemClock()/32,
+    INTERVAL, 
+    INTERVAL_1KK,
+    STAR_DAY_LENGHT,
+    STAR_DAY_LENGHT_1KK
 };
 
 
 void Timer1Init(void);
-void CCP9Init(void);
+
 void Timer1Process(void);
 void CCP9Process(void);
-void LoadCfg(void);
+void InitFS(void);
 // GetTimestamp will be called by the FILEIO library when it needs a timestamp for a file
 void GetTimestamp (FILEIO_TIMESTAMP * timeStamp);
 // Helper function to initialize the RTCC from the compiler timestamp
@@ -146,7 +143,8 @@ void SYSTEM_Initialize( SYSTEM_STATE state )
             CCP9Init();
             break;
         case SYSTEM_STATE_CFG_LOAD:
-            LoadCfg();    
+            InitFS();
+            LoadCfg(&AppConfig);    
             break;
         case SYSTEM_STATE_USB_START:
              //In this devices family of USB microcontrollers, the PLL will not power up and be enabled
@@ -277,18 +275,13 @@ void CCP9Process(void)
 
 }
 
-void LoadCfg(void)
+void InitFS(void)
 {
-    FILEIO_OBJECT file;    
-    const char * pathName = "SYSCONF.CFG";
-    // Buffer for reading data
-    APP_CONFIG Temp;
+    RTCCInit();
+    
     FILEIO_FILE_SYSTEM_TYPE fileSystemType;
     FILEIO_DRIVE_PROPERTIES driveProperties;
 
-
-    RTCCInit();
-    
     if (FILEIO_Initialize() == false)
     {
         while(1);
@@ -310,31 +303,55 @@ void LoadCfg(void)
         FILEIO_DrivePropertiesGet(&driveProperties, 'A');
     } while ((driveProperties.results.free_clusters < 2) && (driveProperties.properties_status == FILEIO_GET_PROPERTIES_STILL_WORKING));
 
-    if(FILEIO_Open(&file, pathName, FILEIO_OPEN_READ) == FILEIO_RESULT_SUCCESS){
-        if (FILEIO_Read (&Temp, 1, sizeof(APP_CONFIG), &file) != sizeof(APP_CONFIG))
-        {
-            while(1);
-        }
+}
 
-        FILEIO_Close (&file);
-    } else {
-        if(FILEIO_Open(&file, pathName, FILEIO_OPEN_READ | FILEIO_OPEN_WRITE | FILEIO_OPEN_CREATE) == FILEIO_RESULT_SUCCESS){
-            if (FILEIO_Write (&AppDefault, 1, sizeof(APP_CONFIG), &file) != sizeof(APP_CONFIG)){
-                while(1);
+void LoadCfg(APP_CONFIG * config)
+{
+    FILEIO_OBJECT file;    
+    const char * pathName = "SYSCONF.CFG";
+    bool NeedCreateFile = false;    
+    // Buffer for reading data
+    while(1){
+        if(FILEIO_Open(&file, pathName, FILEIO_OPEN_READ) == FILEIO_RESULT_SUCCESS){
+            if(file.size < sizeof(APP_CONFIG)){
+                if(NeedCreateFile)                  
+                    while(1);
+                NeedCreateFile = true;
+            }
+            if (FILEIO_Read (config, 1, sizeof(APP_CONFIG), &file) != sizeof(APP_CONFIG)) {
+                if(NeedCreateFile)                  
+                    while(1);
+                NeedCreateFile = true;
+            } else {
+                NeedCreateFile = false;
             }
             FILEIO_Close (&file);
-        }            
+        } else {
+            if(NeedCreateFile)                  
+                while(1);
+            NeedCreateFile = true;
+        }
+        if(NeedCreateFile){
+            SaveCfg(&AppDefault);
+        } else {
+            break;
+        }
     }
-    if(FILEIO_Open(&file, pathName, FILEIO_OPEN_READ) == FILEIO_RESULT_SUCCESS){
-        if (FILEIO_Read (&AppConfig, 1, sizeof(APP_CONFIG), &file) != sizeof(APP_CONFIG))
-        {
+}
+
+void SaveCfg(APP_CONFIG * config)
+{
+    FILEIO_OBJECT file;    
+    const char * pathName = "SYSCONF.CFG";
+     
+    // Buffer for reading data
+    if(FILEIO_Open(&file, pathName, FILEIO_OPEN_READ | FILEIO_OPEN_WRITE | FILEIO_OPEN_CREATE) == FILEIO_RESULT_SUCCESS){
+
+        if (FILEIO_Write (config, 1, sizeof(APP_CONFIG), &file) != sizeof(APP_CONFIG)){
             while(1);
         }
-
         FILEIO_Close (&file);
-    }
-   
-    FILEIO_DriveUnmount('A');
+    }            
 }
 
 // Helper function to initialize the RTCC module.
