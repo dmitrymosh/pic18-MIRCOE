@@ -80,6 +80,7 @@ const FILEIO_DRIVE_CONFIG InternalFlashDrive =
 #define INTERVAL_1KK        641310
 #define STAR_DAY_LENGHT     86164
 #define STAR_DAY_LENGHT_1KK 90530
+#define FLAGS               0b1101  // SL RST EN DIR
 
 #define INTERVAL_1KK_MAX    1000000
 
@@ -103,7 +104,8 @@ APP_CONFIG AppDefault = {
     INTERVAL, 
     INTERVAL_1KK,
     STAR_DAY_LENGHT,
-    STAR_DAY_LENGHT_1KK
+    STAR_DAY_LENGHT_1KK,
+    FLAGS,
 };
 
 
@@ -140,11 +142,11 @@ void SYSTEM_Initialize( SYSTEM_STATE state )
     {
         case SYSTEM_STATE_DEVICE_INIT:
             Timer1Init();
-            CCP9Init();
             break;
         case SYSTEM_STATE_CFG_LOAD:
             InitFS();
             LoadCfg(&AppConfig);    
+            CCP9Init(&AppConfig);
             break;
         case SYSTEM_STATE_USB_START:
              //In this devices family of USB microcontrollers, the PLL will not power up and be enabled
@@ -229,17 +231,17 @@ void Timer1Process(void)
     
 }
 
-void CCP9Init(void)
+void CCP9Init(APP_CONFIG * config)
 {
     
     //Temp.Val = AppConfig.Interval + AppConfig.IntervalCorrection;
-    AppWork.IntervalCounter = AppConfig.Interval;
-    AppWork.IntervalCounter_1kk = AppConfig.Interval_1kk;
+    AppWork.IntervalCounter = config->Interval;
+    AppWork.IntervalCounter_1kk = config->Interval_1kk;
     AppWork.State = 1; // pulse
     CCP9CON = 0x02; //  Compare mode: 
     CCPR9H = 0;
     CCPR9L = 0;
-    Stepper_Init();
+    Stepper_Init(&config->StatusFlags);
     IPR4bits.CCP9IP = 1;
     PIR4bits.CCP9IF = 0;
     PIE4bits.CCP9IE = 1;

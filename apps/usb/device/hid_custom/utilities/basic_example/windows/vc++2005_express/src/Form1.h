@@ -165,12 +165,26 @@ namespace GenericHIDSimpleDemo {
 		COMMAND_SET_CONFIG = 0x81,
 		COMMAND_LOAD_CONFIG = 0x82,
 		COMMAND_SAVE_CONFIG = 0x83,
+		COMMAND_GET_FALGS = 0x84,
+		COMMAND_SET_FALGS = 0x85,
 	} CUSTOM_HID_DEMO_COMMANDS;
 	
 	typedef WORD  uint16_t;
 	typedef DWORD uint32_t;
 	typedef INT16 int16_t;
 	typedef INT32 int32_t;
+
+	typedef union
+	{
+		uint16_t Val;
+		struct  
+		{
+			BYTE DIR			:1;
+			BYTE ENABLE			:1;
+			BYTE RESET			:1;
+			BYTE SLEEP			:1;
+		};
+	} STATUS_FLAGS;
 
 	typedef struct 
 	{
@@ -186,9 +200,12 @@ namespace GenericHIDSimpleDemo {
 		uint32_t Interval_1kk;              // step/1kk 
 		uint32_t StarDayLength;
 		uint32_t StarDayLength_1kk;
+		STATUS_FLAGS StatusFlags;
 	} APP_CONFIG;
 
 	bool NeedUpdate;
+	
+
 	
 //-------------------------------------------------------END CUT AND PASTE BLOCK-------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -282,6 +299,13 @@ namespace GenericHIDSimpleDemo {
 	private: System::Windows::Forms::NumericUpDown^  PulseWidthSteps;
 
 	private: System::Windows::Forms::NumericUpDown^  IntervalMicroSec;
+	private: System::Windows::Forms::CheckBox^  SleepCheckBox;
+	private: System::Windows::Forms::CheckBox^  ResetCheckBox;
+	private: System::Windows::Forms::CheckBox^  EnableCheckBox;
+	private: System::Windows::Forms::CheckBox^  DirectionCheckBox;
+
+
+
 
 
 	private:
@@ -302,6 +326,10 @@ namespace GenericHIDSimpleDemo {
 			this->GetConfigBtn = (gcnew System::Windows::Forms::Button());
 			this->StateLabel = (gcnew System::Windows::Forms::Label());
 			this->groupBox1 = (gcnew System::Windows::Forms::GroupBox());
+			this->SleepCheckBox = (gcnew System::Windows::Forms::CheckBox());
+			this->ResetCheckBox = (gcnew System::Windows::Forms::CheckBox());
+			this->EnableCheckBox = (gcnew System::Windows::Forms::CheckBox());
+			this->DirectionCheckBox = (gcnew System::Windows::Forms::CheckBox());
 			this->TimerStepLength = (gcnew System::Windows::Forms::NumericUpDown());
 			this->TimerFrequency = (gcnew System::Windows::Forms::NumericUpDown());
 			this->StarDayLength = (gcnew System::Windows::Forms::NumericUpDown());
@@ -358,7 +386,7 @@ namespace GenericHIDSimpleDemo {
 			// SendConfigBtn
 			// 
 			this->SendConfigBtn->Enabled = false;
-			this->SendConfigBtn->Location = System::Drawing::Point(177, 450);
+			this->SendConfigBtn->Location = System::Drawing::Point(177, 508);
 			this->SendConfigBtn->Name = L"SendConfigBtn";
 			this->SendConfigBtn->Size = System::Drawing::Size(125, 23);
 			this->SendConfigBtn->TabIndex = 1;
@@ -369,7 +397,7 @@ namespace GenericHIDSimpleDemo {
 			// GetConfigBtn
 			// 
 			this->GetConfigBtn->Enabled = false;
-			this->GetConfigBtn->Location = System::Drawing::Point(33, 450);
+			this->GetConfigBtn->Location = System::Drawing::Point(33, 508);
 			this->GetConfigBtn->Name = L"GetConfigBtn";
 			this->GetConfigBtn->Size = System::Drawing::Size(125, 23);
 			this->GetConfigBtn->TabIndex = 2;
@@ -389,6 +417,10 @@ namespace GenericHIDSimpleDemo {
 			// 
 			// groupBox1
 			// 
+			this->groupBox1->Controls->Add(this->SleepCheckBox);
+			this->groupBox1->Controls->Add(this->ResetCheckBox);
+			this->groupBox1->Controls->Add(this->EnableCheckBox);
+			this->groupBox1->Controls->Add(this->DirectionCheckBox);
 			this->groupBox1->Controls->Add(this->TimerStepLength);
 			this->groupBox1->Controls->Add(this->TimerFrequency);
 			this->groupBox1->Controls->Add(this->StarDayLength);
@@ -409,10 +441,66 @@ namespace GenericHIDSimpleDemo {
 			this->groupBox1->Controls->Add(this->label1);
 			this->groupBox1->Location = System::Drawing::Point(13, 42);
 			this->groupBox1->Name = L"groupBox1";
-			this->groupBox1->Size = System::Drawing::Size(308, 274);
+			this->groupBox1->Size = System::Drawing::Size(308, 332);
 			this->groupBox1->TabIndex = 25;
 			this->groupBox1->TabStop = false;
 			this->groupBox1->Text = L"Parametrs";
+			// 
+			// SleepCheckBox
+			// 
+			this->SleepCheckBox->AutoSize = true;
+			this->SleepCheckBox->CheckAlign = System::Drawing::ContentAlignment::BottomCenter;
+			this->SleepCheckBox->Enabled = false;
+			this->SleepCheckBox->Location = System::Drawing::Point(244, 278);
+			this->SleepCheckBox->Name = L"SleepCheckBox";
+			this->SleepCheckBox->Size = System::Drawing::Size(45, 31);
+			this->SleepCheckBox->TabIndex = 48;
+			this->SleepCheckBox->Text = L"SLEEP";
+			this->SleepCheckBox->TextAlign = System::Drawing::ContentAlignment::TopCenter;
+			this->SleepCheckBox->UseVisualStyleBackColor = true;
+			this->SleepCheckBox->CheckedChanged += gcnew System::EventHandler(this, &Form1::FlagsCheckBox_CheckedChanged);
+			// 
+			// ResetCheckBox
+			// 
+			this->ResetCheckBox->AutoSize = true;
+			this->ResetCheckBox->CheckAlign = System::Drawing::ContentAlignment::BottomCenter;
+			this->ResetCheckBox->Enabled = false;
+			this->ResetCheckBox->Location = System::Drawing::Point(164, 278);
+			this->ResetCheckBox->Name = L"ResetCheckBox";
+			this->ResetCheckBox->Size = System::Drawing::Size(47, 31);
+			this->ResetCheckBox->TabIndex = 47;
+			this->ResetCheckBox->Text = L"RESET";
+			this->ResetCheckBox->TextAlign = System::Drawing::ContentAlignment::TopCenter;
+			this->ResetCheckBox->UseVisualStyleBackColor = true;
+			this->ResetCheckBox->CheckedChanged += gcnew System::EventHandler(this, &Form1::FlagsCheckBox_CheckedChanged);
+			// 
+			// EnableCheckBox
+			// 
+			this->EnableCheckBox->AutoSize = true;
+			this->EnableCheckBox->CheckAlign = System::Drawing::ContentAlignment::BottomCenter;
+			this->EnableCheckBox->Enabled = false;
+			this->EnableCheckBox->Location = System::Drawing::Point(84, 278);
+			this->EnableCheckBox->Name = L"EnableCheckBox";
+			this->EnableCheckBox->Size = System::Drawing::Size(53, 31);
+			this->EnableCheckBox->TabIndex = 46;
+			this->EnableCheckBox->Text = L"ENABLE";
+			this->EnableCheckBox->TextAlign = System::Drawing::ContentAlignment::TopCenter;
+			this->EnableCheckBox->UseVisualStyleBackColor = true;
+			this->EnableCheckBox->CheckedChanged += gcnew System::EventHandler(this, &Form1::FlagsCheckBox_CheckedChanged);
+			// 
+			// DirectionCheckBox
+			// 
+			this->DirectionCheckBox->AutoSize = true;
+			this->DirectionCheckBox->CheckAlign = System::Drawing::ContentAlignment::BottomCenter;
+			this->DirectionCheckBox->Enabled = false;
+			this->DirectionCheckBox->Location = System::Drawing::Point(20, 278);
+			this->DirectionCheckBox->Name = L"DirectionCheckBox";
+			this->DirectionCheckBox->Size = System::Drawing::Size(30, 31);
+			this->DirectionCheckBox->TabIndex = 45;
+			this->DirectionCheckBox->Text = L"DIR";
+			this->DirectionCheckBox->TextAlign = System::Drawing::ContentAlignment::TopCenter;
+			this->DirectionCheckBox->UseVisualStyleBackColor = true;
+			this->DirectionCheckBox->CheckedChanged += gcnew System::EventHandler(this, &Form1::FlagsCheckBox_CheckedChanged);
 			// 
 			// TimerStepLength
 			// 
@@ -599,7 +687,7 @@ namespace GenericHIDSimpleDemo {
 			this->groupBox2->Controls->Add(this->label16);
 			this->groupBox2->Controls->Add(this->label7);
 			this->groupBox2->Controls->Add(this->Interval);
-			this->groupBox2->Location = System::Drawing::Point(13, 322);
+			this->groupBox2->Location = System::Drawing::Point(13, 380);
 			this->groupBox2->Name = L"groupBox2";
 			this->groupBox2->Size = System::Drawing::Size(308, 111);
 			this->groupBox2->TabIndex = 26;
@@ -672,7 +760,7 @@ namespace GenericHIDSimpleDemo {
 			// LoadConfigBtn
 			// 
 			this->LoadConfigBtn->Enabled = false;
-			this->LoadConfigBtn->Location = System::Drawing::Point(33, 482);
+			this->LoadConfigBtn->Location = System::Drawing::Point(33, 540);
 			this->LoadConfigBtn->Name = L"LoadConfigBtn";
 			this->LoadConfigBtn->Size = System::Drawing::Size(125, 23);
 			this->LoadConfigBtn->TabIndex = 27;
@@ -683,7 +771,7 @@ namespace GenericHIDSimpleDemo {
 			// SaveConfigBtn
 			// 
 			this->SaveConfigBtn->Enabled = false;
-			this->SaveConfigBtn->Location = System::Drawing::Point(177, 482);
+			this->SaveConfigBtn->Location = System::Drawing::Point(177, 540);
 			this->SaveConfigBtn->Name = L"SaveConfigBtn";
 			this->SaveConfigBtn->Size = System::Drawing::Size(125, 23);
 			this->SaveConfigBtn->TabIndex = 28;
@@ -695,7 +783,7 @@ namespace GenericHIDSimpleDemo {
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(332, 525);
+			this->ClientSize = System::Drawing::Size(332, 578);
 			this->Controls->Add(this->SaveConfigBtn);
 			this->Controls->Add(this->LoadConfigBtn);
 			this->Controls->Add(this->groupBox2);
@@ -878,6 +966,10 @@ namespace GenericHIDSimpleDemo {
 					SendConfigBtn->Enabled = true;
 					SaveConfigBtn->Enabled = true;
 					StateLabel->Text = "Device connected.";
+					DirectionCheckBox->Enabled = true;
+					EnableCheckBox->Enabled = true;
+					ResetCheckBox->Enabled = true;
+					SleepCheckBox->Enabled = true;
 				}
 				ReadHandle = CreateFile((DetailedInterfaceDataStructure->DevicePath), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, 0);
 				ErrorStatus = GetLastError();
@@ -958,6 +1050,8 @@ private: System::Void SendConfigBtn_Click(System::Object^  sender, System::Event
 		 OutputPacketBuffer[33] = (AppConfig.StarDayLength_1kk >> 8) & 0xFF;
 		 OutputPacketBuffer[34] = (AppConfig.StarDayLength_1kk >> 16) & 0xFF;
 		 OutputPacketBuffer[35] = (AppConfig.StarDayLength_1kk >> 24) & 0xFF;
+		 OutputPacketBuffer[36] = AppConfig.StatusFlags.Val & 0xFF;
+		 OutputPacketBuffer[37] = AppConfig.StatusFlags.Val >> 8;	
 
 		 //The basic Windows I/O functions WriteFile() and ReadFile() can be used to read and write to HID class USB devices.
 		 //Note that we need the handle which we got earlier when we called CreateFile() (when we hit the connect button).
@@ -1016,6 +1110,7 @@ private: System::Void GetConfigBtn_Click(System::Object^  sender, System::EventA
  		 AppConfig.Interval_1kk = InputPacketBuffer[24] + (InputPacketBuffer[25] << 8) + (InputPacketBuffer[26]<<16) + (InputPacketBuffer[27] << 24);
 		 AppConfig.StarDayLength = InputPacketBuffer[28] + (InputPacketBuffer[29] << 8) + (InputPacketBuffer[30]<<16) + (InputPacketBuffer[31] << 24);
 		 AppConfig.StarDayLength_1kk = InputPacketBuffer[32] + (InputPacketBuffer[33] << 8) + (InputPacketBuffer[34]<<16) + (InputPacketBuffer[35] << 24);
+		 AppConfig.StatusFlags.Val = InputPacketBuffer[36] + (InputPacketBuffer[37] << 8);
 
 		 NeedUpdate = false;
 		 SetParams(&AppConfig, true);
@@ -1032,6 +1127,33 @@ private: System::Void StarDayLength_ValueChanged(System::Object^  sender, System
 				SetParams(&AppConfig, false);
 			 }
 		}
+private: System::Void FlagsCheckBox_CheckedChanged(System::Object^  sender, System::EventArgs^  e) {
+			 if(NeedUpdate){
+				 DWORD BytesWritten = 0;
+				 unsigned char OutputPacketBuffer[65];	//Allocate a memory buffer equal to our endpoint size + 1
+				 APP_CONFIG AppConfig;
+
+				 OutputPacketBuffer[0] = 0;			//The first byte is the "Report ID".  This number is used by the USB driver, but does not
+				 //get tranmitted accross the USB bus.  The custom HID class firmware is only configured for
+				 //one type of report, therefore, we must always initializate this byte to "0" before sending
+				 //a data packet to the device.
+
+				 OutputPacketBuffer[1] = COMMAND_SET_FALGS;		//0x80 is the "Toggle LED(s)" command in the firmware
+				 //For simplicity, we will leave the rest of the buffer uninitialized, but you could put real
+				 //data in it if you like.
+				 GetParams(&AppConfig);
+
+				 OutputPacketBuffer[2] = AppConfig.StatusFlags.Val & 0xFF;
+				 OutputPacketBuffer[3] = AppConfig.StatusFlags.Val >> 8;	
+
+				 //The basic Windows I/O functions WriteFile() and ReadFile() can be used to read and write to HID class USB devices.
+				 //Note that we need the handle which we got earlier when we called CreateFile() (when we hit the connect button).
+				 //The following function call will send out 64 bytes (starting from OutputPacketBuffer[1]) to the USB device.  The data will
+				 //arrive on the OUT interrupt endpoint.
+				 WriteFile(WriteHandle, &OutputPacketBuffer, 65, &BytesWritten, 0);	//Blocking function, unless an "overlapped" structure is used
+				 StateLabel->Text = "Current config temporary changed.";
+			 }
+		 }
 	void CalculateParam(APP_CONFIG * config){
 		 double step_per_grad = (double)config->TimerFrequency / (double)(config->SM_StepCount * config->SM_uStepCount * config->GearRatio);
 		 double Star_Day_Length = ((double)config->StarDayLength_1kk / 1000000.0) + (double) config->StarDayLength;
@@ -1058,6 +1180,10 @@ private: System::Void StarDayLength_ValueChanged(System::Object^  sender, System
 		IntervalMicroSec->Value = Decimal( Interval/(double)config->TimerFrequency);
 		PulseWidthSteps->Value = Decimal((double)config->PulseWidth/(double)config->TimerFrequency);
 		IntervalSteps->Value = Decimal(Interval);
+		DirectionCheckBox->Checked = config->StatusFlags.DIR;
+		EnableCheckBox->Checked = !config->StatusFlags.ENABLE;
+		ResetCheckBox->Checked = !config->StatusFlags.RESET;
+		SleepCheckBox->Checked = !config->StatusFlags.SLEEP;
 		
 	}
 	void GetParams(APP_CONFIG * config) {
@@ -1074,6 +1200,12 @@ private: System::Void StarDayLength_ValueChanged(System::Object^  sender, System
 		config->IntervalCorrection = (int16_t)Temp;
 		config->IntervalCorrection_1kk = (int32_t)((Temp - (double)config->IntervalCorrection)* 1000000.0);
 		config->TimerFrequency = (UInt32)TimerFrequency->Value;
+
+		config->StatusFlags.DIR = DirectionCheckBox->Checked;
+		config->StatusFlags.ENABLE = !EnableCheckBox->Checked;
+		config->StatusFlags.RESET = !ResetCheckBox->Checked;
+		config->StatusFlags.SLEEP = !SleepCheckBox->Checked;
+
 		CalculateParam(config);
 	}
 private: System::Void LoadConfigBtn_Click(System::Object^  sender, System::EventArgs^  e) {
@@ -1120,6 +1252,7 @@ private: System::Void LoadConfigBtn_Click(System::Object^  sender, System::Event
 			 AppConfig.Interval_1kk = InputPacketBuffer[24] + (InputPacketBuffer[25] << 8) + (InputPacketBuffer[26]<<16) + (InputPacketBuffer[27] << 24);
 			 AppConfig.StarDayLength = InputPacketBuffer[28] + (InputPacketBuffer[29] << 8) + (InputPacketBuffer[30]<<16) + (InputPacketBuffer[31] << 24);
 			 AppConfig.StarDayLength_1kk = InputPacketBuffer[32] + (InputPacketBuffer[33] << 8) + (InputPacketBuffer[34]<<16) + (InputPacketBuffer[35] << 24);
+			 AppConfig.StatusFlags.Val = InputPacketBuffer[36] + (InputPacketBuffer[37] << 8);
 
 			 NeedUpdate = false;
 			 SetParams(&AppConfig, true);
@@ -1184,6 +1317,9 @@ private: System::Void SaveConfigBtn_Click(System::Object^  sender, System::Event
 			 OutputPacketBuffer[33] = (AppConfig.StarDayLength_1kk >> 8) & 0xFF;
 			 OutputPacketBuffer[34] = (AppConfig.StarDayLength_1kk >> 16) & 0xFF;
 			 OutputPacketBuffer[35] = (AppConfig.StarDayLength_1kk >> 24) & 0xFF;
+			 OutputPacketBuffer[36] = AppConfig.StatusFlags.Val & 0xFF;
+			 OutputPacketBuffer[37] = AppConfig.StatusFlags.Val >> 8;	
+
 
 			 //The basic Windows I/O functions WriteFile() and ReadFile() can be used to read and write to HID class USB devices.
 			 //Note that we need the handle which we got earlier when we called CreateFile() (when we hit the connect button).
@@ -1192,6 +1328,7 @@ private: System::Void SaveConfigBtn_Click(System::Object^  sender, System::Event
 			 WriteFile(WriteHandle, &OutputPacketBuffer, 65, &BytesWritten, 0);	//Blocking function, unless an "overlapped" structure is used
 			 StateLabel->Text = "Config saved to memory.";
 		 }
+
 };
 }
 

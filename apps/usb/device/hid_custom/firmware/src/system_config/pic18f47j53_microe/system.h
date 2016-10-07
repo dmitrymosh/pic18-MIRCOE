@@ -80,6 +80,7 @@ typedef struct
     uint32_t Interval_1kk;              // step/1kk 
     uint32_t StarDayLength;
     uint32_t StarDayLength_1kk;
+    STATUS_FLAGS StatusFlags;
 } APP_CONFIG;
 /*********************************************************************
 * Function: void SYSTEM_Initialize( SYSTEM_STATE state )
@@ -110,7 +111,8 @@ void SYSTEM_Initialize( SYSTEM_STATE state );
 ********************************************************************/
 //void SYSTEM_Tasks(void);
 #define SYSTEM_Tasks()
-void CCP9Init(void);
+void CCP9Init(APP_CONFIG * config);
 void LoadCfg(APP_CONFIG * config);
 void SaveCfg(APP_CONFIG * config);
+void GetStatusFlags(STATUS_FLAGS * Flags);
 #endif //SYSTEM_H

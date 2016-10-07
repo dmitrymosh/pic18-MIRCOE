@@ -63,6 +63,8 @@ typedef enum
     COMMAND_SET_CONFIG = 0x81,
     COMMAND_LOAD_CONFIG = 0x82,
     COMMAND_SAVE_CONFIG = 0x83,
+    COMMAND_GET_FALGS = 0x84,
+    COMMAND_SET_FALGS = 0x85,
 } CUSTOM_HID_DEMO_COMMANDS;
 
 
@@ -119,88 +121,111 @@ void APP_DeviceCustomHIDTasks()
         //application software wants us to fulfill.
         switch(ReceivedDataBuffer[0])				//Look at the data the host sent, to see what kind of application specific command it sent.
         {
-            case COMMAND_SET_CONFIG:  //Get push button state
-                //Check to make sure the endpoint/buffer is free before we modify the contents
-                if(!HIDTxHandleBusy(USBInHandle))
-                {
-                    uint8_t * Temp;                        
-                    uint16_t j = 1;
-                    //ToSendDataBuffer[0] = COMMAND_SET_CONFIG;				//Echo back to the host PC the command we are fulfilling in the first uint8_t.  In this case, the Get Pushbutton State command.                    
-                    //memcpy(&ToSendDataBuffer[1],&AppConfig,sizeof(AppConfig));
-                    Temp = (uint8_t *)&AppConfig;
-                        
-                    for(uint16_t i = 0; i< sizeof(APP_CONFIG); i++){
-                        Temp[i] = ReceivedDataBuffer[j];
-                        j++;
-                    }
-                    CCP9Init();
-                    LED_Toggle(LED_D2);
-                    //Prepare the USB module to send the data packet to the host
-                    //USBInHandle = HIDTxPacket(CUSTOM_DEVICE_HID_EP, (uint8_t*)&ToSendDataBuffer[0],64);
+            case COMMAND_SET_CONFIG:
+            {
+                uint8_t * Temp;                        
+                uint16_t j = 1;
+                //ToSendDataBuffer[0] = COMMAND_SET_CONFIG;				//Echo back to the host PC the command we are fulfilling in the first uint8_t.  In this case, the Get Pushbutton State command.                    
+                //memcpy(&ToSendDataBuffer[1],&AppConfig,sizeof(AppConfig));
+                Temp = (uint8_t *)&AppConfig;                    
+                for(uint16_t i = 0; i< sizeof(APP_CONFIG); i++){
+                    Temp[i] = ReceivedDataBuffer[j];
+                    j++;
                 }
+                CCP9Init(&AppConfig);
+                LED_Toggle(LED_D2);
                 break;
-
+            }
             case COMMAND_GET_CONFIG:	//Read config
-                {
-                    //Check to make sure the endpoint/buffer is free before we modify the contents
-                    if(!HIDTxHandleBusy(USBInHandle))
-                    {
-                        uint8_t * Temp;                        
-                        uint16_t j = 1;
-                        ToSendDataBuffer[0] = COMMAND_GET_CONFIG;  	//Echo back to the host the command we are fulfilling in the first uint8_t.  In this case, the Read POT (analog voltage) command.
-                        Temp = (uint8_t *)&AppConfig;
-                        
-                        for(uint16_t i = 0; i< sizeof(APP_CONFIG); i++){
-                            ToSendDataBuffer[j] = Temp[i];
-                            j++;
-                        }
-                        //memcpy(&ToSendDataBuffer[1],&AppConfig,sizeof(AppConfig));
-
-                        //Prepare the USB module to send the data packet to the host
-                        USBInHandle = HIDTxPacket(CUSTOM_DEVICE_HID_EP, (uint8_t*)&ToSendDataBuffer[0],64);
-                    }
-                }
-                break;
-            case COMMAND_LOAD_CONFIG:	//Load config
-                {
-                    //Check to make sure the endpoint/buffer is free before we modify the contents
-                    if(!HIDTxHandleBusy(USBInHandle))
-                    {
-                        uint8_t * Temp;                        
-                        uint16_t j = 1;
-                        ToSendDataBuffer[0] = COMMAND_GET_CONFIG;  	//Echo back to the host the command we are fulfilling in the first uint8_t.  In this case, the Read POT (analog voltage) command.
-                        LoadCfg(&AppConfig);
-                        Temp = (uint8_t *)&AppConfig;
-                        
-                        for(uint16_t i = 0; i< sizeof(APP_CONFIG); i++){
-                            ToSendDataBuffer[j] = Temp[i];
-                            j++;
-                        }
-                        
-                        //Prepare the USB module to send the data packet to the host
-                        USBInHandle = HIDTxPacket(CUSTOM_DEVICE_HID_EP, (uint8_t*)&ToSendDataBuffer[0],64);
-                    }
-                }
-                break;
-            case COMMAND_SAVE_CONFIG:  //Get push button state
+            {
                 //Check to make sure the endpoint/buffer is free before we modify the contents
                 if(!HIDTxHandleBusy(USBInHandle))
                 {
                     uint8_t * Temp;                        
                     uint16_t j = 1;
+                    ToSendDataBuffer[0] = COMMAND_GET_CONFIG;  	//Echo back to the host the command we are fulfilling in the first uint8_t.  In this case, the Read POT (analog voltage) command.
                     Temp = (uint8_t *)&AppConfig;
-                        
+                    GetStatusFlags(&AppConfig.StatusFlags);
+                    memset(&ToSendDataBuffer[1], 0, sizeof(ToSendDataBuffer)-1);    
                     for(uint16_t i = 0; i< sizeof(APP_CONFIG); i++){
-                        Temp[i] = ReceivedDataBuffer[j];
+                        ToSendDataBuffer[j] = Temp[i];
                         j++;
                     }
-                    CCP9Init();
-                    LED_Toggle(LED_D2);
-                    SaveCfg(&AppConfig);
                     //Prepare the USB module to send the data packet to the host
-                    //USBInHandle = HIDTxPacket(CUSTOM_DEVICE_HID_EP, (uint8_t*)&ToSendDataBuffer[0],64);
+                    USBInHandle = HIDTxPacket(CUSTOM_DEVICE_HID_EP, (uint8_t*)&ToSendDataBuffer[0],64);
                 }
-                break;
+            }
+            break;
+            case COMMAND_LOAD_CONFIG:	//Load config
+            {
+                //Check to make sure the endpoint/buffer is free before we modify the contents
+                if(!HIDTxHandleBusy(USBInHandle))
+                {
+                    uint8_t * Temp;                        
+                    uint16_t j = 1;
+                    ToSendDataBuffer[0] = COMMAND_GET_CONFIG;  	//Echo back to the host the command we are fulfilling in the first uint8_t.  In this case, the Read POT (analog voltage) command.
+                    LoadCfg(&AppConfig);
+                    Temp = (uint8_t *)&AppConfig;
+                    memset(&ToSendDataBuffer[1], 0, sizeof(ToSendDataBuffer)-1); 
+                    for(uint16_t i = 0; i< sizeof(APP_CONFIG); i++){
+                        ToSendDataBuffer[j] = Temp[i];
+                        j++;
+                    }
+
+                    //Prepare the USB module to send the data packet to the host
+                    USBInHandle = HIDTxPacket(CUSTOM_DEVICE_HID_EP, (uint8_t*)&ToSendDataBuffer[0],64);
+                }
+            }
+            break;
+            case COMMAND_SAVE_CONFIG:  
+            {
+                uint8_t * Temp;                        
+                uint16_t j = 1;
+                Temp = (uint8_t *)&AppConfig;
+
+                for(uint16_t i = 0; i< sizeof(APP_CONFIG); i++){
+                    Temp[i] = ReceivedDataBuffer[j];
+                    j++;
+                }
+                CCP9Init(&AppConfig);
+                LED_Toggle(LED_D2);
+                SaveCfg(&AppConfig);                                        
+            }
+            break; 
+            case COMMAND_GET_FALGS:	//Read config
+            {
+                //Check to make sure the endpoint/buffer is free before we modify the contents
+                if(!HIDTxHandleBusy(USBInHandle))
+                {
+                    uint8_t * Temp;                        
+                    uint16_t j = 1;
+                    ToSendDataBuffer[0] = COMMAND_GET_FALGS;  	//Echo back to the host the command we are fulfilling in the first uint8_t.  In this case, the Read POT (analog voltage) command.
+                    GetStatusFlags(&AppConfig.StatusFlags);
+                    Temp = (uint8_t *)&AppConfig.StatusFlags;
+                    memset(&ToSendDataBuffer[1], 0, sizeof(ToSendDataBuffer)-1);                         
+                    for(uint16_t i = 0; i< sizeof(STATUS_FLAGS); i++){
+                        ToSendDataBuffer[j] = Temp[i];
+                        j++;
+                    }
+                    //Prepare the USB module to send the data packet to the host
+                    USBInHandle = HIDTxPacket(CUSTOM_DEVICE_HID_EP, (uint8_t*)&ToSendDataBuffer[0],64);
+                }
+            }
+            break;
+            case COMMAND_SET_FALGS:  
+            {
+                uint8_t * Temp;                        
+                uint16_t j = 1;
+                Temp = (uint8_t *)&AppConfig.StatusFlags;
+
+                for(uint16_t i = 0; i< sizeof(STATUS_FLAGS); i++){
+                    Temp[i] = ReceivedDataBuffer[j];
+                    j++;
+                }
+                CCP9Init(&AppConfig);
+                LED_Toggle(LED_D2);
+            }
+            break; 
         }
         //Re-arm the OUT endpoint, so we can receive the next OUT data packet 
         //that the host may try to send us.

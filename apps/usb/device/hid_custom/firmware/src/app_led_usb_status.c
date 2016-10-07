@@ -103,16 +103,16 @@ void APP_LEDUpdateUSBStatus(void)
 
         default:
             /* We aren't configured yet, but we aren't suspended so let's blink with
-             * a slow pulse. On for 50ms, then off for 950ms, then reset/repeat. */
+             * a slow pulse. On for 500ms, then off for 950ms, then reset/repeat. */
             if(ledCount == 1)
             {
                 LED_On(LED_USB_DEVICE_STATE);
             }
-            else if(ledCount == 50)
+            else if(ledCount == 500)
             {
                 LED_Off(LED_USB_DEVICE_STATE);
             }
-            else if(ledCount > 950)
+            else if(ledCount > 1000)
             {
                 ledCount = 0;
             }

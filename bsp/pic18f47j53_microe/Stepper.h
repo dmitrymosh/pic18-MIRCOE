@@ -25,6 +25,20 @@
 
 #include <stdbool.h>
 
+
+typedef union 
+{
+    unsigned Val;
+    struct  
+    {
+        unsigned DIR			:1;
+        unsigned ENABLE			:1;
+        unsigned RESET			:1;
+        unsigned SLEEP			:1;
+    } bits;
+} STATUS_FLAGS;
+    
+    
 void Stepper_Enable(void);
 void Stepper_Disable(void);
 
@@ -35,6 +49,6 @@ void Stepper_Set_Direction(bool dir);
 
 void Stepper_Reset(void);
 
-void Stepper_Init(void);
+void Stepper_Init(STATUS_FLAGS * Flags);
 
 #endif //LEDS_H
